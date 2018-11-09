@@ -1,6 +1,4 @@
 ﻿using Sitecore.Configuration;
-using Sitecore.Data;
-using Sitecore.Extensions;
 using Sitecore.Globalization;
 using Sitecore.Jobs;
 using Sitecore.Publishing;
@@ -16,7 +14,7 @@ namespace Sitecore.Support.Shell.Applications.Dialogs.Publish
   {
     public void CheckStatus()
     {
-      Handle handle = Handle.Parse(this.JobHandle);
+      Handle handle = Handle.Parse(base.JobHandle);
       if (!handle.IsLocal)
       {
         SheerResponse.Timer("CheckStatus", Settings.Publishing.PublishDialogPollingInterval);
@@ -34,14 +32,26 @@ namespace Sitecore.Support.Shell.Applications.Dialogs.Publish
           base.NextButton.Disabled = true;
           base.BackButton.Disabled = false;
           base.CancelButton.Disabled = false;
-          this.ErrorText.Value = StringUtil.StringCollectionToString(status.Messages);
+          base.ErrorText.Value = StringUtil.StringCollectionToString(status.Messages);
         }
         else
         {
           string str;
           if (status.State == JobState.Running)
           {
-            str = $"{Translate.Text("Database:")} {StringUtil.Capitalize(status.CurrentTarget.NullOr<Database, string>(db => db.Name))}<br/><br/>{Translate.Text("Language:")} {status.CurrentLanguageMessage ?? string.Empty}<br/><br/>{Translate.Text("Processed:")} {status.Processed}";
+            object[] args = new object[6];
+            args[0] = Translate.Text("Database:");
+            string text = string.Empty;
+            if ((status.CurrentTarget != null) && !string.IsNullOrWhiteSpace(status.CurrentTarget.Name))
+            {
+              text = status.CurrentTarget.Name;
+            }
+            args[1] = StringUtil.Capitalize(text);
+            args[2] = Translate.Text("Language:");
+            args[3] = status.CurrentLanguageMessage ?? string.Empty;
+            args[4] = Translate.Text("Processed:");
+            args[5] = status.Processed;
+            str = string.Format("{0} {1}<br/><br/>{2} {3}<br/><br/>{4} {5}", args);
           }
           else if (status.State == JobState.Initializing)
           {
@@ -53,13 +63,14 @@ namespace Sitecore.Support.Shell.Applications.Dialogs.Publish
           }
           if (status.IsDone)
           {
-            this.Status.Text = Translate.Text("Items processed: {0}.", new object[] { status.Processed.ToString() });
+            object[] parameters = new object[] { status.Processed.ToString() };
+            base.Status.Text = Translate.Text("Items processed: {0}.", parameters);
             base.Active = "LastPage";
             base.BackButton.Disabled = true;
-            string str2 = StringUtil.StringCollectionToString(status.Messages, "\n");
-            if (!string.IsNullOrEmpty(str2))
+            string str3 = StringUtil.StringCollectionToString(status.Messages, "\n");
+            if (!string.IsNullOrEmpty(str3))
             {
-              this.ResultText.Value = str2;
+              base.ResultText.Value = str3;
             }
           }
           else
@@ -70,7 +81,5 @@ namespace Sitecore.Support.Shell.Applications.Dialogs.Publish
         }
       }
     }
-
-
   }
 }
